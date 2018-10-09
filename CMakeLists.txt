@@ -10,7 +10,7 @@ set(PLUGIN_OPTIONS)
 set(PLUGIN_SOURCES
         Module.cpp
         Sample.cpp
-        SampleImplementation.cpp)
+        )
 
 include(default_targets) # This is a regular plugin no need to edit the defaults
 

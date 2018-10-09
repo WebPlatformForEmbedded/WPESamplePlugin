@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+    <style>
+        .btn-group .button {
+            background-color: #555555;
+            border: none;
+            color: white;
+            padding: 5px 0px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 15px;
+            margin: 4px 2px;
+            cursor: pointer;
+            width: 250px;
+            height: 30px;
+            border-radius: 8px;
+        }
+
+        .btn-group .button:not(:last-child) {
+            border-bottom: none; /* Prevent double borders */
+        }
+
+        .btn-group .button:hover {
+            background-color: #efefef;
+            color: black;
+        }
+    </style>
+</head>
+
+<title>Sample</title>
+<body>
+<div class="btn-group">
+    <button class="button" type="button" onclick="getText()" >Get Text</button>
+</div>
+<div class="btn-group">
+    <button class="button" type="button" onclick="sendText()">Send Text</button>
+    <input type="text" id="Str" value="" placeholder="Test String" >
+</div>
+
+<div id="results">
+</div >
+
+<script>
+
+    var channelList;
+    var hostName = "192.168.2.202";
+    var pluginName = "Sample";
+    var port = 80;
+
+    initWebsocket();
+
+    function escapeUnicode(str) {
+       return str.replace(/[']/gi,function(ch) {
+            return ("");
+       });
+    }
+    function displayMessages(msg) {
+        msg = document.getElementById("results").innerHTML + msg + "<br>";
+        document.getElementById("results").innerHTML = msg;
+
+   }
+
+   function sendXMLHttpRequest(method, type, params) {
+        var url = "http://" + hostName + ":" + port + "/Service/" + pluginName + "/" + method;
+        var xmlHttp = new XMLHttpRequest();
+        console.log("sendXMLHttpRequest url:" + url + "  params:" + params);
+        xmlHttp.onload = function () {
+            if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+                if (document.getElementById("results")) {
+                    console.log(xmlHttp.responseText);
+                    displayMessages(xmlHttp.responseText);
+                }
+            }
+        };
+        xmlHttp.timeout = 6000;
+
+        if (type == "GET") {
+            xmlHttp.open("GET", url, true);
+            xmlHttp.send();
+        } else if (type == "POST"){
+            xmlHttp.open("POST", url, true);
+            if (params == "" )
+                xmlHttp.send();
+            else
+                xmlHttp.send(params);
+        }
+    }
+
+    function getText() {
+        sendXMLHttpRequest("Test", "GET", "");
+    }
+
+    function sendText() {
+        var str = document.getElementById("Str").value;
+        if (str) {
+            var params = '{"Str" : "' + str + '"}';
+            sendXMLHttpRequest("Test", "POST", params);
+            displayMessages("Sending " + params);
+        }
+    }
+
+    function initWebsocket() {
+        var socket = new WebSocket("ws://" + hostName + "/Service/" + pluginName, "notification");
+        socket.onopen = function() {
+            displayMessages("WebSocket Open");
+        };
+        socket.onerror = function (error) {
+            displayMessages("WebSocket Error " + error);
+        };
+        socket.onmessage = function (evt) {
+            displayMessages("WebSocket OnMessage " + evt.data);
+        };
+        socket.onclose = function () {
+            displayMessages("WebSocket Close");
+            setTimeout(initWebsocket, 5000);    // retry after 5 seconds
+        };
+    }
+
+</script>
+
+</body>
+</html>
